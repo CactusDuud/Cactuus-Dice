@@ -1,0 +1,141 @@
+3/23/2020
+CHANGES:
+    - Added this file. Whoops.
+    - Added character.py file
+        - Holds the data for each character, PC or NPC
+        - Intended to be saved through pickle library (https://docs.python.org/3/library/pickle.html)
+        - Should later interface with other character data
+        - Date class, to manage time (may be moved later)
+        - Attribute class, to manage player attributes
+        - Gauge class, to manage things that fill up and deplete (hp, xp, etc.)
+        - Mood class, to manage mood on the Plutchik scale
+    - Removed error output to console in discord_dice.py's '>>deck_and_draw' command
+    - Reformatted some error messages (many were unclear)
+    - Renamed some files for easier accessibility
+    - Changed wording of '>>deck_count'
+THOUGHTS:
+    - Hands are on the back burner, as I'm not sure how or why to implement them
+
+
+3/24/2020
+CHANGES:
+    - Added DeathSaves class, to manage death saves and failures
+    - Added saving/loading via pickle
+    - Added ">>character_create"
+        - Creates a new character and associates it with the person who created it
+        - Also assigns a CID for later lookup
+    - Added ">>character_status" and ">>character_bio"
+        - Accessible by name and/or CID (Easiest to use CID)
+        - Each displays a portion of character info
+    - XP in character.py is now a gauge
+    - Comments now separate functions in the main discord_dice.py file
+    - All attribute initialise to a random number between 1 and 6
+    - Attributes moved to a dict (Character.attributes)
+THOUGHTS:
+    - Likely not going to implement hand
+
+
+3/25/2020
+CHANGES:
+    - Observe command to view non-owned characters
+    - '>>cdef' can be used to set default CIDs for commands
+    - Removed individual info functions in discord_dice.py and character.py
+    - Info commands now call a single function in character (Character.info())
+        - Formatting changed to be more legible and dynamic
+        - Takes either names or CIDs
+    - There are now default stat calculations for new characters
+
+
+3/26/2020
+CHANGES:
+    - Added more races (Humans, Dwarves and Elves)
+    - Stricter checks on many functions, and thus better feedback for errors
+    - Implemented Gauge recovery and related functions properly
+    - Dice in dice.py now accept 0 for some modifiers
+    - '>>op' commands now work
+THOUGHTS:
+    - Oh yeah, it's all coming together
+
+
+3/27/2020
+CHANGES:
+    - Added point assignment (not tested)
+    - refresh() function on basically everything now works
+    - '>>op' commands now work better
+        - Stats can now be changed
+THOUGHTS:
+    - No time to work today :(
+
+
+3/27/2020
+CHANGES:
+    - A few error messages were made more unique
+    - Point assignment should now work
+THOUGHTS:
+    - My favourite programming problem is when personal issues get in the way of passions
+    - Should probably clean up some of the error events
+
+
+3/30/2020
+CHANGES:
+    - Added sign() function to format modifiers such that positive signs are shown
+    - Added '>>op' rate function, to change character rates (untested)
+    - Added extra details in info('attributes'), including future stat bonuses and bst
+    - Removed some floating print statements
+    - Gauges now fill after stat point assignment
+THOUGHTS:
+    - Should probably clean up some of the error events
+
+
+4/5/2020
+CHANGES:
+    - Added Character.gain_xp(), partially implemented
+    - Removed comparison functions of Attribute (it can just be used as an int)
+
+
+4/10/2020
+CHANGES:
+    - Structure revision pending:
+        - Shift from pickle to JSON for easier data storage
+        - No more pickle :(
+        - Instead, we're using SQLalchemy to better manage data
+        - https://www.youtube.com/watch?v=OT5qJBINiJY
+        - The switch was mostly to combat the difficulties in creating multiple item instances
+THOUGHTS:
+    - I will likely not be working on this for a while because of my job
+    - Progress estimate: [■■■■■■■   ] 60%
+        - Hey this format is kinda cool...
+        - Except it ain't monospaced
+        - Fixed lol
+
+
+4/11/2020
+CHANGES:
+    - Relative moved within Attribute
+    - Gauges are now their own file and are in the process of being cleaned up
+        - New bar() function to do [■■■■■■■■■■■■■■      ]
+THOUGHTS:
+    - Might change the changelog format, idk if this is the most efficient way to catalogue stuff
+
+
+2/18/2021
+CHANGES:
+   - Prefix is now "!" since I'm pretty sure this will be the only bot I use
+   - Removed Fudge dice... they weren't really relevant anyways :(
+   - Refactored changelog... lol
+   - Refactored dice regex to be a bit neater and capture new features
+       - Changed "kh" to "h" and "kl" to "l"
+       - Modifier number is now optional
+THOUGHTS:
+   - I still have my job but wow that's really funny to read a year later
+   - Wait I don't have source control on any of this...
+   - Discord slash notation seems really useful, but I've yet to receive the package
+       - I will likely be switching to or co-implementing these when available
+
+
+3/23/2021
+CHANGES:
+    - Continued to migrate stored rolls into a separate class
+    - Updated RegEx test cases to include invalid numbers for modifiers
+    - Fixed incorrect loop for exploding dice
+THOUGHTS:
