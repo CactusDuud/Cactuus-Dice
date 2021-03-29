@@ -138,4 +138,20 @@ CHANGES:
     - Continued to migrate stored rolls into a separate class
     - Updated RegEx test cases to include invalid numbers for modifiers
     - Fixed incorrect loop for exploding dice
+    - Set up Github (woohoo!)
 THOUGHTS:
+    - why did I not set up a repository earlier
+        - This project has been on three computers, locally
+        - kinda cringe ngl
+
+3/29/2021
+CHANGES:
+    - Major refactoring of roll printing
+    - Deprecated operator commands for now
+    - Began the process of making the python print terminal an actual log
+    - Removed comparisons from str(dice)
+THOUGHTS:
+    - I want to support multiple types of dice per roll as well
+        - Will require a regex revisit for potentially infinite roll matches
+        - Container class?
+    - Should rewrite operator commands to be easier to use

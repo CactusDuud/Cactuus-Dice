@@ -3,6 +3,7 @@ Property of Sage L Mahmud (https://github.com/CactusDuud)
 This work is licensed under a Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License.
 https://creativecommons.org/licenses/by-nc-sa/4.0/
 """
+import traceback
 
 import character
 import deck as card_deck
@@ -10,7 +11,7 @@ import dice
 import discord
 import fudge
 import os
-import pickle
+from datetime import datetime
 from collections import defaultdict
 from datetime import datetime
 from discord.ext import commands
@@ -27,7 +28,7 @@ PREFIX = '!'
 bot = commands.Bot(command_prefix=PREFIX)
 
 setting = None
-table = None  # Represents the current probability generator (dice, deck, whatever)
+table = None  # Represents the current probability generator (dice, deck, whatever) TODO: is this even necessary?
 characters = defaultdict(dict)
 defaults = dict()
 IDcounter = 0
@@ -39,7 +40,7 @@ IDcounter = 0
 @bot.event
 async def on_ready():
     guild = discord.utils.get(bot.guilds, name=GUILD)
-    print(f"{bot.user.name} has connected to \"{guild.name}\" (id:{guild.id})")
+    print(f"[{datetime.now().strftime('%H:%M:%S')}] {bot.user.name} has connected to \"{guild.name}\" (id:{guild.id})")
 
 
 @bot.event
@@ -57,6 +58,8 @@ async def on_command_error(ctx, error):
         await ctx.send('You do not have permission to use this command.')
 
 
+# TODO: Deprecated operator commands. Also separate you rat man! op_ prefix
+"""
 @bot.command(name='op',
              aliases=['operator', 'dm'])
 @commands.has_role('DM')
@@ -196,34 +199,29 @@ async def operator_commands(ctx, *cmds):
             await ctx.send(f"<@{ctx.author.id}>: **Error**: Invalid CID")
     else:
         await ctx.send(f"<@{ctx.author.id}>: **Error**: \"{' '.join(cmds)}\" not defined")
-
+"""
 
 # =================================================== DICE AND DECK ====================================================
+# TODO: Categories in cogs (https://discordpy.readthedocs.io/en/latest/ext/commands/cogs.html)
+
 
 @bot.command(name='roll',
              aliases=['r'],
              help='Rolls the given die (Ex: 1d6). Modifiers are, in order: general modifiers, math, comparisons.')
 async def roll(ctx, cmd: str = '1d100'):
+    print(f"[{datetime.now().strftime('%H:%M:%S')}] {ctx.author} called discord_dice.roll")
     global table
     try:
         table = dice.Dice(cmd.lower())
         table.roll()
-        await ctx.send(f"<@{ctx.author.id}>'s {table}: {table.results()} = {table.sum()}")
-    except dice.DiceException:  # TODO: Exceptions can pass an error message as a string dingus
-        await ctx.send(f"<@{ctx.author.id}>: **Error**: \"{cmd}\" not defined")
-
-
-@bot.command(name='roll_fudge',
-             aliases=['fudge', 'rf', 'rF'],
-             help='Rolls a given Fudge die (Ex: 10dF)')
-async def roll_fudge(ctx, cmd: int = 1):
-    global table
-    try:
-        table = fudge.Dice(cmd)
-        table.roll()
-        await ctx.send(f"<@{ctx.author.id}>'s {table}: {table.results()} = {table.sum()}")
-    except dice.DiceException:
-        await ctx.send(f"<@{ctx.author.id}>: **Error**: Cannot roll \"{cmd}\" Fudge dice")
+        print(f"[{datetime.now().strftime('%H:%M:%S')}] \tresult {table.results()}")
+        # TODO: Reformat for "dice cup" rolls
+        await ctx.send(f"<@{ctx.author.id}>'s {table}:\n\t{table.results()}")
+    except dice.DiceException as e:  # TODO: Exceptions can pass an error message as a string dingus
+        await ctx.send(f"<@{ctx.author.id}>: **Error**: {e}")
+    except Exception as e:
+        traceback.print_exc()
+        await ctx.send(f"<@{ctx.author.id}>: **Error**: {e}")
 
 
 @bot.command(name='reroll',
@@ -231,7 +229,7 @@ async def roll_fudge(ctx, cmd: int = 1):
              help='Re-rolls the last die thrown')
 async def reroll(ctx):
     global table
-    if type(table) in (dice.Dice, fudge.Dice):
+    if table is not None:
         table.roll()
         await ctx.send(f"<@{ctx.author.id}>'s {table}: {table.results()} = {table.sum()}")
     elif type(table) is card_deck.Deck:

@@ -22,29 +22,54 @@ class DiceException(Exception):
     pass
 
 
+# Okay this should probably be a helper class but I don't think I'll make it one
 class RollResults:
-    def __init__(self):
+    def __init__(self, faces=None):
+        self.faces = faces
         self.rolls = []
-        self.dropped = set()
-        self.bonus = set()
-        self.sum = None
+        self.dropped_indices = set()
+        self.bonus_indices = set()
 
     def __iter__(self):
         return iter(self.rolls)
 
-    def add(self, new_roll, bonus=False):
-        """Adds a roll to the list of roll results"""
+    def __str__(self):
+        """Create roll sum portion (Ex: "(1 + 20)")"""
+        addend_list = []
+        for i in range(len(self.rolls)):
+            pending_addend = self.rolls[i]
+
+            # Drop striking
+            if i in self.dropped_indices:
+                pending_addend = f"~~{pending_addend}~~"
+
+            # Bonus marking
+            if i in self.bonus_indices:
+                pending_addend = f"*{pending_addend}*"
+
+            # Min/max highlighting
+            if self.faces >= 3 and (self.rolls[i] == 1 or self.rolls[i] == self.faces):
+                pending_addend = f"**{pending_addend}**"
+
+            addend_list.append(str(pending_addend))
+
+        return f"({' + '.join(addend_list)})"
+
+    def add(self, new_roll: int, bonus=False) -> None:
+        """Adds a roll to the list of roll results. Optionally marks a roll as a bonus roll."""
         self.rolls.append(new_roll)
-        self.sum = new_roll if self.sum is None else self.sum + new_roll
 
-        # Record bonus rolls
+        # Record bonus roll indices for later
         if bonus:
-            self.bonus.add(new_roll)
+            self.bonus_indices.add(len(self.rolls)-1)
 
-    def drop(self, dropped_index):
-        """Marks a result of the roll to be dropped, updating the sum"""
-        self.dropped.add(dropped_index)
-        self.sum -= self.rolls[dropped_index]
+    def drop(self, dropped_index: int) -> None:
+        """Marks the a roll to be dropped"""
+        self.dropped_indices.add(dropped_index)
+
+    def get_sum(self) -> int:
+        """Returns the sum of the last roll as an int"""
+        return sum(self.rolls) - sum([self.rolls[i] for i in self.rolls if i in self.dropped_indices])
 
 
 class Dice:
@@ -69,8 +94,7 @@ class Dice:
 
             # Cached results for later reference
             self.last_results = RollResults()
-            self.print_results = ''
-            self.print_sum = ''
+            self.print_result = ''
         else:
             raise DiceException("Invalid input parameters")
 
@@ -79,7 +103,8 @@ class Dice:
         return_str = f"{self.rolls if self.rolls > 1 else ''}d{self.faces}"
         return_str += f"{self.operator}{self.operand}" if self.operator is not None else ''
         return_str += f"{self.modifier}{self.modus}" if self.modifier is not None else ''
-        return_str += f" {self.comparison}{self.comparator}" if self.comparison is not None else ''
+        # Temporarily removed, because it looks better
+        # return_str += f"{self.comparison}{self.comparator}" if self.comparison is not None else ''
         return return_str
 
     def __len__(self):
@@ -88,10 +113,9 @@ class Dice:
 
     def roll(self):
         """Rolls the dice"""
-        # Re-initialise values
-        self.last_results = RollResults()
-        self.print_results = ''
-        self.print_sum = ''
+        # Clear cached values
+        self.last_results = RollResults(self.faces)
+        self.print_result = ''
 
         '''
         Valid modifiers:
@@ -123,131 +147,127 @@ class Dice:
 
         # Explode x times case (rolls again on max result up to x times)
         elif self.modifier == 'e':
-            for i in range(self.rolls):
+            for _ in range(self.rolls):
                 r = randint(1, self.faces)
                 self.last_results.add(r)
 
                 # Repeatedly roll again if max result
-                loops = 0
+                loops = 1
                 while r == self.faces and loops <= self.modus:
                     r = randint(1, self.faces)
-                    if r == self.faces:
-                        self.last_results.add(r, bonus=True)
+                    self.last_results.add(r, bonus=True)
                     loops += 1
 
         # Rerolls numbers equal to or below x
         elif self.modifier == 'r':
-            bonus = 1
             for i in range(self.rolls):
                 r = randint(1, self.faces)
-                self.last_results += [r]
+                self.last_results.add(r)
+
                 if r <= self.modus:
-                    self.last_results += [randint(1, self.faces)]
-                    self.dropped_results.add(i + bonus - 1)
-                    self.bonus_results.add(i + bonus)
-                    bonus += 1
+                    self.last_results.drop(i-1)
+                    self.last_results.add(randint(1, self.faces), bonus=True)
 
         # Standard case
         else:
-            self.last_results = [randint(1, self.faces) for _ in range(self.rolls)]
+            self.last_results.rolls = [randint(1, self.faces) for _ in range(self.rolls)]
 
-        # Calculate sum of rolls
-        self.count_sum()
+    def operate(self, num: int) -> int:
+        """Applies the stored operation on a number"""
+        '''
+        Valid operators:
+            + : addition
+            - : subtraction
+            * : multiplication
+            / : integer division
+            % : modular division
+            ^ : exponentiation
+        '''
 
-    def count_sum(self):
-        """Updates the sum of the last roll results"""
-
-        for i in range(len(self.last_results)):
-            if i not in self.dropped_results:
-                self.last_sum += self.last_results[i]
-
-        # Modify sum based on operator
         if self.operator == '+':
-            self.last_sum += self.operand
+            num += self.operand
         elif self.operator == '-':
-            self.last_sum -= self.operand
+            num -= self.operand
         elif self.operator == '*':
-            self.last_sum *= self.operand
+            num *= self.operand
         elif self.operator == '/':
-            self.last_sum //= self.operand
+            num //= self.operand
         elif self.operator == '%':
-            self.last_sum %= self.operand
+            num %= self.operand
         elif self.operator == '^':
-            self.last_sum **= self.operand
+            num **= self.operand
 
-        self.last_sum = 1 if self.last_sum < 1 else self.last_sum
+        return num
 
-    def results(self) -> str:
-        """Returns the results of the last roll as a string"""
-        if self.print_results == '':
+    def compare(self, num: int) -> str:
+        """Returns a string following the boolean value of a number"""
+        '''
+        Valid comparisons:
+            = : equal to (also ==)
+            ! : not equal to (also !=)
+            > : greater than
+            < : less than
+            > : greater than or equal to
+            < : less than or equal to
+        '''
 
-            # Create roll sum portion (Ex: "(1 + 20)")
-            print_list = []
-            for i in range(len(self.last_results)):
+        if self.comparison == '=' or self.comparison == '==':
+            if num == self.comparator:
+                return f' = {self.comparator} *(SUCCESS)*'
+            else:
+                return f' ≠ {self.comparator} *(FAILURE)*'
 
-                # Min/Max highlighting and drop striking
-                if i in self.dropped_results:
-                    print_list += [f"~~{self.last_results[i]}~~"]
-                elif i in self.bonus_results:
-                    print_list += [f"*{self.last_results[i]}*"]
-                elif self.faces >= 3 \
-                        and (self.last_results[i] == 1 or self.last_results[i] == self.faces):
-                    print_list += [f"**{self.last_results[i]}**"]
-                else:
-                    print_list += [str(self.last_results[i])]
-            self.print_results = f"({' + '.join(print_list)})"
+        elif self.comparison == '!' or self.comparison == '!=':
+            if num != self.comparator:
+                return f' ≠ {self.comparator} *(SUCCESS)*'
+            else:
+                return f' = {self.comparator} *(FAILURE)*'
 
-            # Append the operator
+        elif self.comparison == '<':
+            if num < self.comparator:
+                return f' < {self.comparator} *(SUCCESS)*'
+            else:
+                return f' ≥ {self.comparator} *(FAILURE)*'
+
+        elif self.comparison == '>':
+            if num > self.comparator:
+                return f' > {self.comparator} *(SUCCESS)*'
+            else:
+                return f' ≤ {self.comparator} *(FAILURE)*'
+
+        elif self.comparison == '<=':
+            if num <= self.comparator:
+                return f' ≤ {self.comparator} *(SUCCESS)*'
+            else:
+                return f' > {self.comparator} *(FAILURE)*'
+
+        elif self.comparison == '>=':
+            if num >= self.comparator:
+                return f' ≥ {self.comparator} *(SUCCESS)*'
+            else:
+                return f' < {self.comparator} *(FAILURE)*'
+
+    def results(self):
+        """Return the results of the last roll"""
+
+        if self.print_result == '':
+
+            # Start with print version of the last roll, including drops and bonuses, as well as the sum
+            # Ex: "(6 + 4 + 2)" with a sum of 12
+            self.print_result = str(self.last_results)
+            roll_sum = self.last_results.get_sum()
+
+            # Calculate any operations
+            # Ex: "(6 + 4 + 2) / 2" with a sum of 6
             if self.operator is not None:
-                self.print_results += f" {self.operator} {self.operand}"
+                roll_sum = self.operate(roll_sum)
+                self.print_result += f" {self.operator} {self.operand}"
 
-        return self.print_results
+            # Concatenate the final sum
+            self.print_result += f" = {str(roll_sum)}"
 
-    def sum(self) -> str:
-        """Returns the sum of the last roll as a string"""
+            # Append comparisons
+            if self.comparison is not None:
+                self.print_result += self.compare(roll_sum)
 
-        if self.print_sum == '':
-            self.print_sum = str(self.last_sum)
-
-            # Format fail/success based on comparison
-            '''
-            Valid comparisons:
-                = : equal to (also ==)
-                ! : not equal to (also !=)
-                > : greater than
-                < : less than
-                > : greater than or equal to
-                < : less than or equal to
-            '''
-            if self.comparison == '=' or self.comparison == '==':
-                if self.last_sum == self.comparator:
-                    self.print_sum += f' = {self.comparator} **SUCCESS**'
-                else:
-                    self.print_sum += f' ≠ {self.comparator} **FAILURE**'
-            elif self.comparison == '!' or self.comparison == '!=':
-                if self.last_sum != self.comparator:
-                    self.print_sum += f' ≠ {self.comparator} **SUCCESS**'
-                else:
-                    self.print_sum += f' = {self.comparator} **FAILURE**'
-            elif self.comparison == '<':
-                if self.last_sum < self.comparator:
-                    self.print_sum += f' < {self.comparator} **SUCCESS**'
-                else:
-                    self.print_sum += f' ≥ {self.comparator} **FAILURE**'
-            elif self.comparison == '>':
-                if self.last_sum > self.comparator:
-                    self.print_sum += f' > {self.comparator} **SUCCESS**'
-                else:
-                    self.print_sum += f' ≤ {self.comparator} **FAILURE**'
-            elif self.comparison == '<=':
-                if self.last_sum <= self.comparator:
-                    self.print_sum += f' ≤ {self.comparator} **SUCCESS**'
-                else:
-                    self.print_sum += f' > {self.comparator} **FAILURE**'
-            elif self.comparison == '>=':
-                if self.last_sum >= self.comparator:
-                    self.print_sum += f' ≥ {self.comparator} **SUCCESS**'
-                else:
-                    self.print_sum += f' < {self.comparator} **FAILURE**'
-
-        return self.print_sum
+        return self.print_result
