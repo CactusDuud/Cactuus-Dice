@@ -9,10 +9,10 @@ from random import randint
 import re
 
 
-# https://regex101.com/r/lY0AAN/1
+# https://regex101.com/r/r832Rb/1
 ROLL_PATTERN = r'^' \
                r'(?P<rolls>[1-9][\d]*)?d(?P<faces>[1-9][\d]*)' \
-               r'(?:(?P<modifier>e|r|h|l)(?P<modus>[1-9][\d]*)?)?' \
+               r'(?:(?P<modifier>e|r|h|k|l)(?P<modus>[1-9][\d]*)?)?' \
                r'(?:(?P<operator>[+\-*/%^])(?P<operand>[\d]+))?' \
                r'(?:(?P<comparison>[<>=!][=]?)(?P<comparator>[\d]+))?' \
                r'$'
@@ -69,7 +69,7 @@ class RollResults:
 
     def get_sum(self) -> int:
         """Returns the sum of the last roll as an int"""
-        return sum(self.rolls) - sum([self.rolls[i] for i in self.rolls if i in self.dropped_indices])
+        return sum([self.rolls[i] for i in range(len(self.rolls)) if i not in self.dropped_indices])
 
 
 class Dice:
@@ -119,14 +119,14 @@ class Dice:
 
         '''
         Valid modifiers:
-            h : keeps modus highest dice
+            h : keeps modus highest dice (also takes k)
             l : keeps modus lowest dice
             e : rolls additional dice at the max number
             r : rerolls numbers equal or below modus
         '''
 
         # Keep x highest dice (keeps the x highest results)
-        if self.modifier == 'h':
+        if self.modifier == 'h' or self.modifier == 'k':
             self.last_results.rolls = [randint(1, self.faces) for _ in range(self.rolls)]
 
             # Remove ascending values from an enumerated list

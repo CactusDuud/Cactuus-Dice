@@ -144,7 +144,7 @@ THOUGHTS:
         - This project has been on three computers, locally
         - kinda cringe ngl
 
-3/29/2021
+3/28/2021
 CHANGES:
     - Major refactoring of roll printing
     - Deprecated operator commands for now
@@ -155,3 +155,18 @@ THOUGHTS:
         - Will require a regex revisit for potentially infinite roll matches
         - Container class?
     - Should rewrite operator commands to be easier to use
+
+3/29/2021
+CHANGES:
+    - Changed the prefix to '/' because it just looks right
+        - Also minimises the eventual change to slash commands
+    - Finished refactoring discord_dice.roll()
+    - Refactored discord_dice.reroll()
+    - Refactored discord_dice.reprint()
+    - Refactored discord_dice.print_current()
+    - Implemented first cog for dice and decks
+        - TODO: Move to its own file?
+            - After all of the commands are in cogs ye
+    - TODO: Refactor deck
+THOUGHTS:
+    - Maybe I should allow for decimals in operators
