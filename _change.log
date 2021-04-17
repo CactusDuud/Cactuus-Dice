@@ -170,3 +170,14 @@ CHANGES:
     - TODO: Refactor deck
 THOUGHTS:
     - Maybe I should allow for decimals in operators
+
+4/17/22021
+CHANGES:
+    - Some file refactoring regarding naming
+    - Starting converting to slash commands
+        - Temporarily disabled all bot commands
+        - Began implementation of cogs and slashes
+
+THOUGHTS:
+    - Look into rich presence?
+    - Feeling like Create with all these cogs

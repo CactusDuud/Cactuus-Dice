@@ -1,6 +1,6 @@
 """
 Property of Sage L Mahmud (https://github.com/CactusDuud)
-Intended to be implemented alongside discord_dice.py
+Intended to be implemented alongside main.py
 This work is licensed under a Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License.
 https://creativecommons.org/licenses/by-nc-sa/4.0/
 """
