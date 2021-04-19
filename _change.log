@@ -181,3 +181,7 @@ CHANGES:
 THOUGHTS:
     - Look into rich presence?
     - Feeling like Create with all these cogs
+
+4/18/2021
+CHANGES:
+    - Implemented /roll (yay!)

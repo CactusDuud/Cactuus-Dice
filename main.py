@@ -24,7 +24,7 @@ GUILD_IDS = [614956261103894558]
 PREFIX = '!'
 
 # setting = None
-# table = None  # Represents the current probability generator (dice, deck, whatever) TODO: is this even necessary?
+table = None  # Represents the current probability generator (dice, deck, whatever)
 # characters = defaultdict(dict)
 # defaults = dict()
 # IDcounter = 0  # TODO: Use SQL to better separate IDs? There's a better way at least

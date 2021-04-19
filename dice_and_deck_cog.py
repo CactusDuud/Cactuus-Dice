@@ -9,15 +9,20 @@ https://creativecommons.org/licenses/by-nc-sa/4.0/
 # TODO: Migrate "dice cup" rolls
 # TODO: Refactor help text to include decks
 
+import dice
 import discord
+import traceback
 from datetime import datetime
 from discord.ext import commands
 from discord_slash import cog_ext, SlashContext
+from discord_slash.utils.manage_commands import create_option
 
 GUILD_IDS = [614956261103894558]
 
 
-class DiceAndDeck(commands.Cog, name="Dice and Deck Cog"):
+class DiceAndDeck(commands.Cog,
+                  name="Dice and Deck Cog",
+                  description="Dice rolls and deck draws; anything using chance."):
     def __init__(self, bot):
         self.bot = bot
 
@@ -26,27 +31,26 @@ class DiceAndDeck(commands.Cog, name="Dice and Deck Cog"):
         print(f"[{datetime.now().strftime('%H:%M:%S')}] {ctx.author} called main._test")
         await ctx.send("test")
 
-
-def setup(bot):
-    print(f"[{datetime.now().strftime('%H:%M:%S')}] dice_and_deck_cog initialised...")
-    bot.add_cog(DiceAndDeck(bot))
-
-"""
-class DiceAndDeckDeprecated(commands.Cog,
-                  name="Dice and Decks",
-                  description="Dice rolls and deck draws; anything using chance."):
-
-    @commands.command(name='roll',
-                      aliases=['r'],
-                      help='Rolls the given die (Ex: 1d6).\n'
-                           'Modifiers are, in order: general modifiers, math, comparisons.')
-    async def roll(self, ctx, cmd: str = '1d100'):
-        print(f"[{datetime.now().strftime('%H:%M:%S')}] {ctx.author} called discord_dice.roll with {cmd.lower()}")
-        global table
+    @cog_ext.cog_slash(name='roll',
+                       description='Rolls the given die (Ex: 1d6). '
+                                   'Modifiers are, in order: general modifiers, math, comparisons.',
+                       guild_ids=GUILD_IDS,
+                       options=[
+                           create_option(
+                               name="roll_string",
+                               description="The string to generate a roll. Defaults to 1d100.",
+                               option_type=3,
+                               required=False
+                           )
+                       ])
+    async def roll(self, ctx, roll_string: str = '1d100'):
+        print(f"[{datetime.now().strftime('%H:%M:%S')}] {ctx.author} called DiceAndDeck.roll with "
+              f"\"{roll_string.lower()}\"")
         try:
-            table = dice.Dice(cmd.lower())
+            global table
+            table = dice.Dice(roll_string.lower())
             table.roll()
-            print(f"[{datetime.now().strftime('%H:%M:%S')}] \tresult \"{table.results()}\"")
+            print(f"[{datetime.now().strftime('%H:%M:%S')}] \tresulted in \"{table.results()}\"")
             await ctx.send(f"<@{ctx.author.id}>'s {table}:\n\t{table.results()}")
         except dice.DiceException as e:
             print(f"[{datetime.now().strftime('%H:%M:%S')}] \terror \"{e}\"")
@@ -54,6 +58,17 @@ class DiceAndDeckDeprecated(commands.Cog,
         except Exception as e:
             traceback.print_exc()
             await ctx.send(f"<@{ctx.author.id}>: **Error**: {e}")
+
+
+def setup(bot):
+    print(f"[{datetime.now().strftime('%H:%M:%S')}] dice_and_deck_cog initialised...")
+    bot.add_cog(DiceAndDeck(bot))
+
+
+"""
+class DiceAndDeck(commands.Cog,
+                  name="Dice and Decks",
+                  description="Dice rolls and deck draws; anything using chance."):
 
     @commands.command(name='reroll',
                       aliases=['re-roll', 'rr'],
