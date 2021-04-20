@@ -177,7 +177,6 @@ CHANGES:
     - Starting converting to slash commands
         - Temporarily disabled all bot commands
         - Began implementation of cogs and slashes
-
 THOUGHTS:
     - Look into rich presence?
     - Feeling like Create with all these cogs
@@ -185,3 +184,12 @@ THOUGHTS:
 4/18/2021
 CHANGES:
     - Implemented /roll (yay!)
+
+4/19/2021
+CHANGES:
+    - Implemented most of the slash commands for deck and dice (mega yay!)
+        - Much more feedback in the console
+    - Began implementation of characters cog
+THOUGHTS:
+    - SQL is gonna be weird with everything I have
+        - might have to do research on how real games save character data

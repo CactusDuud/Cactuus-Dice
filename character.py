@@ -9,6 +9,7 @@ from datetime import datetime
 from dice import Dice
 from gauge import Gauge
 from random import randint
+from sqlalchemy.ext.declarative import declarative_base
 
 
 STAT_LIST = [
@@ -133,7 +134,7 @@ RACE_INDEX = {
         }
     }
 PHI = (1 + 5 ** 0.5) / 2
-
+BASE = declarative_base()
 
 class Attribute:
     def __init__(self, base: int, level: int = 1):
@@ -254,8 +255,8 @@ def sign(val: int or float) -> str:
             raise TypeError(f"Cannot return a signed {type(val)}")
 
 
-class Character:
-    def __init__(self, owner, cid, name: str, race: str):
+class Character(BASE):
+    def __init__(self, occupation: str, ancestry: str, character_name: str, owner):
         # Basic info
         self.owner = owner
         self.cid = cid
