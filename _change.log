@@ -193,3 +193,13 @@ CHANGES:
 THOUGHTS:
     - SQL is gonna be weird with everything I have
         - might have to do research on how real games save character data
+
+4/20/2021
+THOUGHTS:
+    - Using databases for characters isn't practical, probably gonna pickle instead
+        - Possibly use database to keep track of how character data is stored
+
+5/10/2021
+CHANGES:
+    - Began to implement Character class
+    - Rewriting Gauge class to be included in Character

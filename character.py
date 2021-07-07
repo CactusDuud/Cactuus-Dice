@@ -5,311 +5,187 @@ This work is licensed under a Creative Commons Attribution-NonCommercial-ShareAl
 https://creativecommons.org/licenses/by-nc-sa/4.0/
 """
 
-from datetime import datetime
+from datetime import date, timedelta
 from dice import Dice
-from gauge import Gauge
-from random import randint
-from sqlalchemy.ext.declarative import declarative_base
 
 
-STAT_LIST = [
-    'STR',
-    'FRT',
-    'CON',
-    'INT',
-    'WIS',
-    'FOC',
-    'DEX',
-    'PER',
-    'CHA'
-]
-RACE_INDEX = {
-        'Human': {
-            'Race': "Novian Human",
-            'Roll': "3d6k2",
-            'Roll Points': 18,
-            'Bonuses': (0, 0, 0, 0, 0, 0, 0, 0, 0)
-        },
-        'Novianhuman': {
-            'Race': "Novian Human",
-            'Roll': "3d6k2",
-            'Roll Points': 18,
-            'Bonuses': (0, 0, 0, 0, 0, 0, 0, 0, 0)
-        },
-        'Vetusianhuman': {
-            'Race': "Vetusian Human",
-            'Roll': "3d6k2",
-            'Roll Points': 18,
-            'Bonuses': (0, 0, 0, 1, -1, 0, 0, 0, 0)
-        },
-        'Dwarf': {
-            'Race': "Mountain Dwarf",
-            'Roll': "3d6k2",
-            'Roll Points': 18,
-            'Bonuses': (0, 2, 0, -1, 1, 0, -2, 0, 0)
-        },
-        'Mountaindwarf':  {
-            'Race': "Mountain Dwarf",
-            'Roll': "3d6k2",
-            'Roll Points': 18,
-            'Bonuses': (0, 2, 0, -1, 1, 0, -2, 0, 0)
-        },
-        'Hilldwarf': {
-            'Race': "Hill Dwarf",
-            'Roll': "3d6k2",
-            'Roll Points': 18,
-            'Bonuses': (0, 2, 0, -1, 0, 0, -2, 1, 0)
-        },
-        'Deepsdwarf': {
-            'Race': "Deeps Dwarf",
-            'Roll': "3d6k2",
-            'Roll Points': 18,
-            'Bonuses': (0, 2, 0, -1, 1, 0, -2, 1, -1)
-        },
-        'Halfdwarf': {
-            'Race': "Half-Dwarf",
-            'Roll': "3d6k2",
-            'Roll Points': 18,
-            'Bonuses': (0, 1, 0, -1, 0, 0, -1, 0, 1)
-        },
-        'Dwelf': {
-            'Race': "Dwelf",
-            'Roll': "3d6k2",
-            'Roll Points': 18,
-            'Bonuses': (1, 0, 1, -1, 0, 0, 0, 0, -1)
-        },
-        'Elf': {
-            'Race': "High Elf",
-            'Roll': "3d6k2",
-            'Roll Points': 18,
-            'Bonuses': (0, -2, 1, 0, -1, 0, 2, 0, 0)
-        },
-        'Highelf': {
-            'Race': "High Elf",
-            'Roll': "3d6k2",
-            'Roll Points': 18,
-            'Bonuses': (0, -2, 1, 1, -1, 0, 2, 0, 0)
-        },
-        'Woodelf': {
-            'Race': "Wood Elf",
-            'Roll': "3d6k2",
-            'Roll Points': 18,
-            'Bonuses': (0, -2, 1, 0, -1, 0, 2, 1, 0)
-        },
-        'Seaelf': {
-            'Race': "Sea Elf",
-            'Roll': "3d6k2",
-            'Roll Points': 18,
-            'Bonuses': (0, -2, 1, 1, -2, 0, 2, 0, 1)
-        },
-        'Skyelf': {
-            'Race': "Sky Elf",
-            'Roll': "3d6k2",
-            'Roll Points': 18,
-            'Bonuses': (0, -3, 1, 1, -2, 0, 3, 0, 1)
-        },
-        'Sunelf': {
-            'Race': "Sun Elf",
-            'Roll': "3d6k2",
-            'Roll Points': 18,
-            'Bonuses': (0, -2, 2, 1, -2, 0, 2, 0, 0)
-        },
-        'Moonelf': {
-            'Race': "Moon Elf",
-            'Roll': "3d6k2",
-            'Roll Points': 18,
-            'Bonuses': (-1, -2, 1, 2, -1, 0, 2, 0, 0)
-        },
-        'Voidelf': {
-            'Race': "Void Elf",
-            'Roll': "3d6k2",
-            'Roll Points': 18,
-            'Bonuses': (0, -2, 1, 1, 0, 0, 2, 0, -1)
-        },
-        'Halfelf': {
-            'Race': "Half-Elf",
-            'Roll': "3d6k2",
-            'Roll Points': 18,
-            'Bonuses': (0, -1, -1, 0, 0, 0, 1, 1, 0)
-        }
-    }
-PHI = (1 + 5 ** 0.5) / 2
-BASE = declarative_base()
+class CharacterException(Exception):
+    pass
+
 
 class Attribute:
-    def __init__(self, base: int, level: int = 1):
-        self.base = base
-        self.rate = randint(1, 20) / 100
-        self.add_bonus = 0
-        self.mul_bonus = 1.00
-
-        self.score = int(self.base * self.mul_bonus + self.add_bonus)
-        self.next = int(self.base + self.rate * (level + 1)) - int(self.base + self.rate * level)
-        self.mod = (self.score - 10) // 2
+    # TODO: Decide how buffs are calculated
+    def __init__(self, name: str, proficiencies: dict[str, int]):
+        self.value = 0
+        self.name = name
+        self.proficiencies = proficiencies
 
     def __str__(self):
-        return_str = f"(" if self.mul_bonus != 1.00 else f" "
-        return_str += f"{self.score}" + (" " * (3 - len(str(self.score))))
-        return_str += f" ×{self.mul_bonus})" if self.mul_bonus != 1.00 else f""
-        return_str += f" +{self.add_bonus}" if self.add_bonus != 0 else f""
-        return_str += f" [{sign(self.mod)}]"
-        return return_str
+        return f"{self.name} [{self.value / 10:+}]"
 
     def __int__(self):
-        return int(self.score)
+        return self.value
 
-    # TODO: Define comparisons
+    def __add__(self, other):
+        return self.value + other
 
-    def refresh(self, level: int = 1):
-        """Recalculates derived values"""
-        self.score = int(self.base * self.mul_bonus + self.add_bonus)
-        self.next = int(self.base + self.rate * (level + 1)) - int(self.base + self.rate * level)
-        self.mod = (self.score - 10) // 2
+    def __radd__(self, other):
+        return other + self.value
 
-    def relative(self, other) -> str:
-        """Determines the relative score as a str"""
-        if self.score >= int(other) * 1.494:
-            return "Superb"
-        elif self.score >= int(other) * 1.433:
-            return "Great"
-        elif self.score >= int(other) * 1.191:
-            return "Good"
-        elif self.score >= int(other) * 0.809:
-            return "Fair"
-        elif self.score >= int(other) * 0.567:
-            return "Mediocre"
-        elif self.score >= int(other) * 0.506:
-            return "Poor"
-        elif self.score >= 0:
-            return "Terrible"
+    def __getitem__(self, item):
+        return self.value + self.proficiencies[item]
+
+    def set(self, value: int, proficiency: str = ''):
+        if proficiency != '':
+            try:
+                self.proficiencies[proficiency] = value
+            except KeyError:
+                raise CharacterException(f"Proficiency {proficiency} does not exist")
         else:
-            return "Unknown"
-
-    def grow(self):
-        """Increases the base stat by the rate"""
-        self.base += self.rate
+            self.value = value
 
 
-class Mood:
-    def __init__(self):
-        self.happiness = 0
-        self.anticipation = 0
-        self.trust = 0
-        self.aggression = 0
+class Character:
+    def __init__(self, ancestry: str, character_name: str, player):
+        class Gauge:
+            def __init__(self, base: int, stat: str):
+                self.max = base + self.attributes[stat]
+                self.value = base + self.attributes[stat]
 
+            def __add__(self, other):
+                return self.value + other
 
-class DeathSaves:
-    def __init__(self):
-        self.saves = 0
-        self.fails = 0
+            def __radd__(self, other):
+                return other + self.value
 
-    def __str__(self):
-        return_str = 'O' * self.saves
-        return_str += '-' * (6 - self.saves - self.fails)
-        return_str += 'X' * self.fails
-        return return_str
+            def __iadd__(self, other):
+                self.value += other
+                if self.value > self.max:
+                    self.value = self.max
 
-    def __bool__(self):
-        return self.fails < 3
+            def __str__(self):
+                pass
 
+            def overflow(self, value):
+                self.value += value
 
-def calc_attributes(race) -> dict:
-    return_dict = {
-                'STR': None,
-                'FRT': None,
-                'CON': None,
-                'INT': None,
-                'WIS': None,
-                'FOC': None,
-                'DEX': None,
-                'PER': None,
-                'CHA': None
-            }
-    attr_die = Dice(RACE_INDEX[race]['Roll'])
-    c = 0
-    for k in return_dict:
-        attr_die.roll()
-        return_dict[k] = Attribute(attr_die.last_sum + RACE_INDEX[race]['Bonuses'][c])
-        c += 1
-    return return_dict
+        # TODO: Check for valid ancestry and factor into character creation
+        self.ancestry = ancestry
+        self.character_name = character_name
+        self.player = player
 
+        # TODO: Allow users to set these traits
+        self.aliases = [self.character_name]
+        self.dob = date(0, 1, 1)
+        self.base_height = 0
+        self.base_weight = 0
+        self.appearance = ""
+        self.background = ""
 
-def calc_bst(attributes: dict, level: int) -> int:
-    """:return total of all stats"""
-    total = 0
-    for attribute in attributes.values():
-        total += int(attribute.base + attribute.rate * (level + 1))
-    return total
+        # TODO: Allow users to set attributes
+        self.attributes = {
+            "AGI": Attribute("Agility", {
+                "Acrobatics": 0,
+                "Finesse": 0,
+                "Reflexes": 0,
+                "Stealth": 0
+            }),
+            "CHM": Attribute("Charm", {
+                "Performance": 0,
+                "Persuasion": 0
+            }),
+            "FRT": Attribute("Fortitude", {
+                "Athletics": 0,
+                "Combat": 0,
+                "Core": 0,
+                "Grip": 0
+            }),
+            "GUT": Attribute("Guts", {
+                "Consciousness": 0,
+                "Digestion": 0,
+                "Endurance": 0,
+                "Immunity": 0
+            }),
+            "KEN": Attribute("Keenness", {
+                "Accuracy": 0,
+                "Insight": 0,
+                "Instinct": 0,
+                "Investigation": 0,
+                "Perception": 0
+            }),
+            "SAG": Attribute("Sagacity", {
+                "Crafts": 0,
+                "Cuisine": 0,
+                "Mechanics": 0,
+                "Religion": 0,
+                "Society": 0
+            }),
+            "WIT": Attribute("Wit", {
+                "Arcana": 0,
+                "Geography": 0,
+                "History": 0,
+                "Logic": 0,
+                "Medicine": 0,
+                "Nature": 0
+            })
+        }
 
-
-def sign(val: int or float) -> str:
-    """:return the string equivalent of the value with sign"""
-    if type(val) is int:
-        return f"+{val}" if val >= 0 else f"{val}"
-    elif type(val) is float:
-        return f"+{val:.2f}" if val >= 0 else f"{val:.2f}"
-    else:
-        try:
-            return f"+{val}" if val >= 0 else f"{val}"
-        except Exception:
-            raise TypeError(f"Cannot return a signed {type(val)}")
-
-
-class Character(BASE):
-    def __init__(self, occupation: str, ancestry: str, character_name: str, owner):
-        # Basic info
-        self.owner = owner
-        self.cid = cid
-        self.aliases = [name]
-        self.race = RACE_INDEX[race]['Race']
-        self.race_key = race
-        self.bg = None
-        self.biography = None
-        self.bday = None
-        self.height = None
-        self.weight = None
-        self.appearance = None
-        self.alive = DeathSaves()
-        self.level = 1
-
-        # Attributes
-        self.attr_points = RACE_INDEX[race]['Roll Points']
-        self.attributes = calc_attributes(race)
-        self.bst = calc_bst(self.attributes, self.level)
+        self.traits = []
 
         # Gauges
-        self.xp = Gauge(int(self.level * PHI * 20))
-        self.health = \
-            Gauge(max((max(self.attributes['CON'].mod + 3, 1) * self.level + 9), 1),
-                  f"1d6{'+' if self.attributes['CON'].mod >= 0 else ''}{self.attributes['CON'].mod}",
-                  True)
-        self.aura = \
-            Gauge(max((max(self.attributes['FOC'].mod + 2, 1) * self.level + 6), 1),
-                  f"1d4{'+' if self.attributes['FOC'].mod >= 0 else ''}{self.attributes['FOC'].mod}",
-                  True)
-        self.stamina = \
-            Gauge(max((self.attributes['FRT'].mod * 10 + 100), 10),
-                  f"2d20{'+' if self.attributes['CHA'].mod >= 0 else ''}{self.attributes['CHA'].mod}",
-                  True)
-        self.fullness = \
-            Gauge(max((self.attributes['CON'].mod * 10 + 100), 10),
-                  fill=True)
-        self.hydration = \
-            Gauge(max((self.attributes['CON'].mod * 10 + 100), 10),
-                  fill=True)
-        self.immunity = \
-            Gauge(max((self.attributes['CON'].mod * 10 + 100), 10),
-                  f"1d10{'+' if self.attributes['CON'].mod >= 0 else ''}{self.attributes['CON'].mod}",
-                  True)
-        self.morale = \
-            Gauge(max((self.attributes['FOC'].mod * 10 + 100), 10),
-                  f"1d20{'+' if self.attributes['CHA'].mod >= 0 else ''}{self.attributes['CHA'].mod}",
-                  True)
-        self.sanity = \
-            Gauge(max((self.attributes['FOC'].mod * 10 + 100), 10),
-                  f"1d20{'+' if self.attributes['CHA'].mod >= 0 else ''}{self.attributes['CHA'].mod}",
-                  True)
+        self.health = Gauge(80)
+        self.sanity = Gauge(80 + self.attributes["SAG"])
+        self.stamina = Gauge(80 + self.attributes["GUT"])
+        self.luck = Gauge(Dice("3d6").roll())
+        self.xp = Gauge(0)
 
+    def total_weight(self):
+        # TODO: Add carried weight
+        return self.base_weight
+
+    def size(self):
+        return (self.base_height * self.total_weight()) // 2
+
+    def carry_weight(self):
+        return round((self.size() / 4) * (100 + self.attributes["FRT"]["Core"]) / 100, 3)
+
+    def movement(self, mode: str = 'Walk'):
+        if mode == 'Walk':
+            return self.base_height * 0.83 * 100 + self.attributes["AGI"]["Acrobatics"] / 100
+        if mode == 'Sprint':
+            return 1.5 * self.base_height * 0.83 * 100 + self.attributes["AGI"]["Acrobatics"] / 100
+        if mode == 'Crawl':
+            return 0.5 * self.base_height * 0.83 * 100 + self.attributes["AGI"]["Acrobatics"] / 100
+        if mode == 'Climb':
+            return 0.167 * self.base_height * 0.83 * 100 + self.attributes["FRT"]["Grip"] / 100
+        if mode == 'Swim':
+            return 0.167 * self.base_height * 0.83 * 100 + self.attributes["FRT"]["Athletics"] / 100
+        if mode == 'Fly':
+            return 0
+        else:
+            raise CharacterException(f"Movement type {mode} does not exist")
+
+    def initiative(self):
+        return self.attributes[""]
+
+    def reach(self):
+        # TODO: Factor in tools
+        return round((self.base_height * 0.34) / 100, 3)
+
+    def age(self, other_time: date) -> timedelta:
+        return other_time - self.dob
+
+    def add_alias(self, new_alias):
+        self.aliases.append(new_alias)
+
+    def get_ap(self):
+        return 6 + (int(self.attributes["AGI"]) // 20)
+
+
+
+"""
+class Character:
+    def __init__(self, occupation: str, ancestry: str, character_name: str, owner):
         # Derived stats
         self.age = None
         self.carry_weight = Gauge(self.attributes['FRT'] * 2.5)
@@ -328,7 +204,7 @@ class Character(BASE):
         self.traits = []
 
     def refresh(self, time: datetime = None, fill: bool = False):
-        """Recalculates derived information after an update"""
+        # Recalculates derived information after an update
         # Update stats
         for a in self.attributes:
             self.attributes[a].refresh(self.level)
@@ -376,7 +252,7 @@ class Character(BASE):
         self.action_points.refresh(new_max=6 + self.initiative, new_recovery=6 + self.initiative, fill=fill)
 
     def assign(self, p_attr: [int]) -> bool:
-        """:return boolean based on the success of point assignment"""
+        # return boolean based on the success of point assignment
         point_total = 0
         for i in range(9):
             if p_attr[i] - self.attributes[STAT_LIST[i]].base < 0:
@@ -415,10 +291,7 @@ class Character(BASE):
         return False
 
     def gain_xp(self, dice_str: str) -> str:
-        """
-        Increases the user's total experience
-        :return text containing the results
-        """
+        # Increases the user's total experience :return text containing the results
         # TODO: Tie in skills and y'know, actually write this
         old_level = self.level
 
@@ -437,7 +310,7 @@ class Character(BASE):
         return return_str
 
     def info(self, mode='all') -> str:
-        """:return detailed information on the character as a string"""
+        # return detailed information on the character as a string
         alias_info = True if mode in ('all', 'bio') else False
         bio_info = True if mode in ('all', 'bio') else False
         status_info = True if mode in ('all', 'status') else False
@@ -537,7 +410,7 @@ class Character(BASE):
         return return_str
 
     def observe(self, observer, mode='all') -> str:
-        """:return obscured info on the character as a string"""
+        # return obscured info on the character as a string
         bio_info = True if mode in ('all', 'bio') else False
         status_info = True if mode in ('all', 'status') else False
         attribute_info = True if mode in ('all', 'attributes', 'bio') else False
@@ -578,3 +451,4 @@ class Character(BASE):
         # Equipment
 
         return return_str
+"""

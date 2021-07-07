@@ -107,8 +107,12 @@ class Dice:
         return return_str
 
     def __len__(self):
-        """returns the number of rolls"""
+        """Returns the number of rolls"""
         return self.rolls
+
+    def __int__(self):
+        """Returns the sum of the last roll."""
+        return self.last_results.get_sum()
 
     def roll(self):
         """Rolls the dice"""

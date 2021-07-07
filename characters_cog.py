@@ -29,12 +29,6 @@ class CharactersCog(commands.Cog,
                        guild_ids=GUILD_IDS,
                        options=[
                            create_option(
-                               name="occupation",
-                               description="What your character does.",
-                               option_type=3,
-                               required=True
-                           ),
-                           create_option(
                                name="ancestry",
                                description="What species and culture you come from.",
                                option_type=3,
@@ -47,30 +41,27 @@ class CharactersCog(commands.Cog,
                                required=True
                            ),
                            create_option(
-                               name="owner",
-                               description="Who owns the character.",
+                               name="player",
+                               description="Who the character is played by.",
                                option_type=6,
                                required=False
                            )
                        ])
-    async def character_create(self, ctx, occupation: str, ancestry: str, character_name: str, owner=None):
+    async def character_create(self, ctx, ancestry: str, character_name: str, player=None):
         try:
+            player = ctx.author if ctx.author is None else player
             print(f"[{datetime.now().strftime('%H:%M:%S')}] {ctx.author} called CharactersCog.character_create with:\n"
-                  f"\t\t\toccupation:\t{occupation}\n"
                   f"\t\t\tancestry:\t{ancestry}\n"
                   f"\t\t\tname:\t\t{character_name}\n"
-                  f"\t\t\towner:\t\t{owner if owner is not None else 'none, defaulted to self'}")
-            if owner is None:
-                owner = ctx.author
-            new_character = character.Character(occupation, ancestry, character_name, owner)
+                  f"\t\t\towner:\t\t{player}")
 
-            # await ctx.send(f"<@{ctx.author.id}>: New character created!\n"
-            #                f"\tCID: {characters[ctx.author.id][IDcounter].cid}\n"
-            #                f"\tName: {characters[ctx.author.id][IDcounter].aliases[0]}\n"
-            #                f"\tRace: {characters[ctx.author.id][IDcounter].race}")
+            new_character = character.Character(ancestry, character_name, player)
+
         except Exception as e:
             traceback.print_exc()
             await ctx.send(f"**Error**: {e}")
+
+    # TODO: Update aliases, associated player, traits, stats, appearance, and bg
 
 
 def setup(bot):
